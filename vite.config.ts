@@ -24,5 +24,7 @@ export default defineConfig({
     root: '.',
     include: ['test/**/*.test.ts'],
     environment: 'node',
+    // 실제 git으로 복제·Push·Pull을 연달아 하는 테스트가 있어서, 느린 서버(GitHub Actions)에서도 넉넉하게
+    testTimeout: 30_000,
   },
 })
