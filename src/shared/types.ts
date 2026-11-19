@@ -215,8 +215,6 @@ export interface AppSettings {
   ignoreWhitespace: boolean
   /** 화면 배율. 0 = 자동(창 너비에 맞춰 키움), 그 밖에는 고정 배율(0.8~1.75) */
   zoom: number
-  /** 업데이트 받을 주소 (latest.yml이 있는 폴더). 비우면 설치 파일에 박힌 기본 주소 */
-  updateUrl: string
   /** 켤 때·4시간마다 새 버전 확인 */
   autoUpdate: boolean
   /** 화면 언어. auto = Windows 언어(한국어가 아니면 영어) */
@@ -233,9 +231,6 @@ export interface UpdateStatus {
   newVersion: string | null
   /** 받는 중 0~100 */
   progress: number | null
-  /** 지금 쓰는 업데이트 주소 (설정 또는 기본) */
-  url: string
-  defaultUrl: string
   checkedAt: number | null
 }
 

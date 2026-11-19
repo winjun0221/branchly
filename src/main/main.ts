@@ -66,7 +66,7 @@ function startupDir(): string | null {
 
 // ───────── 앱 설정 ─────────
 
-const DEFAULT_SETTINGS: AppSettings = { theme: 'system', editor: '', diffFontSize: 12, sideBySide: false, ignoreWhitespace: false, zoom: 0, updateUrl: '', autoUpdate: true, language: 'auto' }
+const DEFAULT_SETTINGS: AppSettings = { theme: 'system', editor: '', diffFontSize: 12, sideBySide: false, ignoreWhitespace: false, zoom: 0, autoUpdate: true, language: 'auto' }
 
 function normalizeSettings(v: unknown): AppSettings {
   const o = typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {}
@@ -79,7 +79,6 @@ function normalizeSettings(v: unknown): AppSettings {
     sideBySide: o.sideBySide === true,
     ignoreWhitespace: o.ignoreWhitespace === true,
     zoom: typeof o.zoom === 'number' && o.zoom >= 0.8 && o.zoom <= 1.75 ? Math.round(o.zoom * 100) / 100 : 0,
-    updateUrl: typeof o.updateUrl === 'string' && updater.validUpdateUrl(o.updateUrl.trim()) ? o.updateUrl.trim() : '',
     autoUpdate: o.autoUpdate !== false,
     language: o.language === 'ko' || o.language === 'en' ? o.language : 'auto',
   }
@@ -449,10 +448,6 @@ const handlers: Handlers = {
   // 앱
   settings: async () => readSettings(),
   saveSettings: async (s) => {
-    const raw = checkObject(s)
-    if (typeof raw.updateUrl === 'string' && raw.updateUrl.trim() && !updater.validUpdateUrl(raw.updateUrl.trim())) {
-      throw new Error(t('쓸 수 없는 업데이트 주소예요. https:// 주소나 사내망 http:// 주소(사설 IP·서버 이름)를 넣어 주세요'))
-    }
     const next = normalizeSettings(s)
     writeJson('settings.json', next)
     applyTheme(next)

@@ -1,6 +1,7 @@
 // 자동 업데이트 (electron-updater, generic 방식): 업데이트 주소 폴더의 latest.yml을 보고 새 버전을 받아 둔다.
 // 받은 뒤에는 "다시 시작해서 설치" 또는 앱을 끌 때 조용히 설치된다.
-// 주소: 앱 설정(updateUrl) → 없으면 설치 파일에 박힌 기본 주소(package.json build.publish → resources/app-update.yml).
+// 주소: 설치 파일에 박힌 주소(package.json build.publish → resources/app-update.yml, GitHub 릴리스).
+// 시험할 때만 환경 변수 BRANCHLY_UPDATE_URL로 바꿀 수 있다(예: npm run serve-updates의 http://127.0.0.1:8765/).
 import { app } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import fs from 'node:fs'
@@ -12,15 +13,13 @@ import { t } from '../shared/i18n'
 const PLACEHOLDER = 'example.invalid'
 const EVERY = 4 * 60 * 60 * 1000
 
-let settings: () => { updateUrl: string; autoUpdate: boolean } = () => ({ updateUrl: '', autoUpdate: false })
+let settings: () => { autoUpdate: boolean } = () => ({ autoUpdate: false })
 let status: UpdateStatus = {
   current: app.getVersion(),
   state: 'idle',
   message: null,
   newVersion: null,
   progress: null,
-  url: '',
-  defaultUrl: '',
   checkedAt: null,
 }
 let timer: NodeJS.Timeout | undefined
@@ -64,8 +63,8 @@ function defaultUrl(): string {
 }
 
 function effectiveUrl(): string {
-  const own = settings().updateUrl.trim()
-  return own || defaultUrl()
+  const test = process.env.BRANCHLY_UPDATE_URL?.trim()
+  return test && validUpdateUrl(test) ? test : defaultUrl()
 }
 
 function disabledReason(url: string): string | null {
@@ -80,10 +79,10 @@ export function getStatus(): UpdateStatus {
   const url = effectiveUrl()
   const reason = disabledReason(url)
   if (reason && status.state !== 'downloading' && status.state !== 'ready') {
-    return { ...status, state: 'disabled', message: reason, url, defaultUrl: defaultUrl() }
+    return { ...status, state: 'disabled', message: reason }
   }
   if (!reason && status.state === 'disabled') status = { ...status, state: 'idle', message: null }
-  return { ...status, url, defaultUrl: defaultUrl() }
+  return { ...status }
 }
 
 export async function check(): Promise<UpdateStatus> {

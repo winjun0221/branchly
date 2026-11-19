@@ -15,7 +15,6 @@
   "모든 파일": "All files",
   "압축 파일로 내보내기": "Export as archive",
   "이 버전으로 저장": "Save this version",
-  "쓸 수 없는 업데이트 주소예요. https:// 주소나 사내망 http:// 주소(사설 IP·서버 이름)를 넣어 주세요": "Invalid update URL. Enter an https:// URL or an internal http:// URL (private IP or server name)",
   "줄바꿈은 쓸 수 없습니다": "Line breaks are not allowed",
   "열 수 없는 주소": "This URL can't be opened",
   "허용되지 않은 요청": "Request not allowed",

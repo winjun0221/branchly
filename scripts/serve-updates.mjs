@@ -1,5 +1,5 @@
 // 자동 업데이트 시험용 서버: release/의 latest.yml과 거기 적힌 설치 파일만 이 PC(127.0.0.1)에서 내준다.
-// 사용: node scripts/serve-updates.mjs [포트=8765]  → 앱 설정 > 업데이트 주소에 http://127.0.0.1:8765/
+// 사용: node scripts/serve-updates.mjs [포트=8765]  → 설치본을 환경 변수 BRANCHLY_UPDATE_URL=http://127.0.0.1:8765/ 로 실행
 import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'

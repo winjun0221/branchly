@@ -176,8 +176,6 @@ function Updates() {
   const current = useSettings().data ?? DEFAULT_SETTINGS
   const st = useUpdateStatus()
   const s = st.data
-  const [url, setUrl] = useState<string | null>(null)
-  const value = url ?? current.updateUrl
   const save = async (patch: Partial<AppSettings>) => {
     try {
       qc.setQueryData(['settings'], await api.saveSettings({ ...current, ...patch }))
@@ -211,12 +209,6 @@ function Updates() {
             </button>}
       </div>
       <Check checked={current.autoUpdate} onChange={(v) => void save({ autoUpdate: v })}>{t('켤 때와 4시간마다 새 버전 확인하고 미리 받아 두기')}</Check>
-      <Field label={t('업데이트 주소')} hint={t('새 버전 파일(latest.yml, 설치 파일, .blockmap)을 올려 둔 폴더 주소. https 또는 사내망 http. 비우면 기본 주소{url}를 써요.', { url: s?.defaultUrl && !s.defaultUrl.includes('example.invalid') ? `(${s.defaultUrl})` : t('(아직 없음)') })}>
-        <div className="row">
-          <input className="grow" value={value} onChange={(e) => setUrl(e.target.value)} placeholder="https://files.example.com/branchly/" spellCheck={false} />
-          <button type="button" className="btn" disabled={value.trim() === current.updateUrl} onClick={async () => { if (await save({ updateUrl: value.trim() })) setUrl(null) }}>{t('저장')}</button>
-        </div>
-      </Field>
       <p className="muted small">{t('받아 둔 새 버전은 "다시 시작해서 설치"를 누르거나, 다음에 앱을 끌 때 조용히 설치돼요. 포터블 exe와 개발 버전은 자동 업데이트를 하지 않아요.')}</p>
     </>
   )

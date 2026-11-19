@@ -1,5 +1,6 @@
 // 번역 확인: 1) t()/tx()/tk() 밖에 남은 한글  2) 영어 사전(locales/en/*.json)에 없는 키  3) {자리} 불일치
 // 사용: node scripts/i18n-check.mjs [파일...]   (없으면 src 전체)
+//       node scripts/i18n-check.mjs --prune    (src 전체를 보고 안 쓰는 영어 항목을 json에서 지움)
 // 일부러 한글을 남길 줄에는 주석으로 i18n-ignore
 import fs from 'node:fs'
 import path from 'node:path'
@@ -18,7 +19,9 @@ function walk(dir) {
     return /\.(ts|tsx)$/.test(e.name) ? [p] : []
   })
 }
-const files = (process.argv.slice(2).length ? process.argv.slice(2).map((f) => path.resolve(f)) : walk(path.join(root, 'src')))
+const PRUNE = process.argv.includes('--prune')
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'))
+const files = (args.length ? args.map((f) => path.resolve(f)) : walk(path.join(root, 'src')))
   .filter((f) => !SKIP.some((s) => f.endsWith(s)))
 
 const HANGUL = /[가-힣ㄱ-ㆎ]/
@@ -56,9 +59,17 @@ for (const file of files) {
   }
 }
 
-if (process.argv.slice(2).length === 0) {
+if (args.length === 0) {
   const unused = Object.keys(EN).filter((k) => !usedKeys.has(k))
-  if (unused.length) console.log(`(참고) 쓰이지 않는 영어 항목 ${unused.length}개`)
+  if (unused.length && PRUNE) {
+    for (const f of fs.readdirSync(localeDir).filter((f) => f.endsWith('.json'))) {
+      const file = path.join(localeDir, f)
+      const d = JSON.parse(fs.readFileSync(file, 'utf8'))
+      const kept = Object.fromEntries(Object.entries(d).filter(([k]) => usedKeys.has(k)))
+      fs.writeFileSync(file, JSON.stringify(kept, null, 2) + '\n')
+    }
+    console.log(`안 쓰는 영어 항목 ${unused.length}개를 지웠어요: ${unused.map((k) => JSON.stringify(k)).join(', ').slice(0, 400)}`)
+  } else if (unused.length) console.log(`(참고) 쓰이지 않는 영어 항목 ${unused.length}개 — --prune으로 지울 수 있어요`)
 }
 console.log(problems ? `\n문제 ${problems}개` : `OK — 파일 ${files.length}개, 키 ${usedKeys.size}개`)
 process.exit(problems ? 1 : 0)
