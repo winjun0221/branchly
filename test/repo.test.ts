@@ -41,9 +41,14 @@ afterAll(() => {
 describe('repo', () => {
   it('finds the top folder from a subfolder', async () => {
     write('src/deep/x.txt', 'x')
-    const info = await repo.resolveRepo(path.join(dir, 'src'))
-    expect(path.resolve(info.path)).toBe(path.resolve(fs.realpathSync(dir)))
-    fs.rmSync(path.join(dir, 'src/deep'), { recursive: true })
+    try {
+      const info = await repo.resolveRepo(path.join(dir, 'src'))
+      // GitHub Actions에서는 임시 폴더가 짧은 이름(RUNNER~1)으로 오고 git은 긴 이름을 준다 → 실제 경로로 맞춰 비교
+      const real = (p: string) => path.resolve(fs.realpathSync.native(p)).toLowerCase()
+      expect(real(info.path)).toBe(real(dir))
+    } finally {
+      fs.rmSync(path.join(dir, 'src/deep'), { recursive: true, force: true })
+    }
   })
 
   it('logs all branches in topo order with refs', async () => {
