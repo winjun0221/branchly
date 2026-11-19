@@ -21,6 +21,8 @@ export interface Ws {
   setIgnoreWhitespace(v: boolean): void
   /** 진행 중인 작업 이름 (툴바에 돎) */
   busy: string | null
+  /** 마지막으로 자동 Fetch한 시각 (툴바 Fetch 버튼에 표시) */
+  lastAutoFetch: number | null
   /**
    * git 작업 실행: 도는 표시 → 성공 알림(또는 충돌 안내) → 저장소 새로고침. 오류는 알림으로.
    * 성공하면 true (대화 상자는 true일 때 닫는다)

@@ -10,6 +10,7 @@ import { useUi } from '../ui'
 import { short, useWs } from '../ws'
 import { GraphCell, LANE_W, ROW_H } from './Graph'
 import CommitDetail from './CommitDetail'
+import { clamp, Splitter, usePaneSize } from './Splitter'
 
 const PAGE = 1000
 const MAX_GRAPH_LANES = 14
@@ -42,6 +43,8 @@ export default function HistoryView({ focus, onFocusTaken }: { focus: { sha: str
   const [anchor, setAnchor] = useState<string | null>(null)
   const [compare, setCompare] = useState<{ from: string; to: string } | null>(null)
   const list = useRef<HTMLDivElement>(null)
+  const [detailPct, setDetailPct, resetDetailPct] = usePaneSize('historyDetail', 44)
+  const historyRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewH, setViewH] = useState(600)
   const pendingFocus = useRef<string | null>(null)
@@ -155,7 +158,7 @@ export default function HistoryView({ focus, onFocusTaken }: { focus: { sha: str
   const modeInfo = SEARCH_MODES.find((m) => m.value === mode)!
 
   return (
-    <div className="history">
+    <div className="history" ref={historyRef} style={{ gridTemplateRows: `minmax(120px, 1fr) 0 minmax(150px, ${detailPct}%)` }}>
       <div className="commit-table">
         <div className="history-bar">
           <div className="seg small">
@@ -226,6 +229,10 @@ export default function HistoryView({ focus, onFocusTaken }: { focus: { sha: str
           </div>
         </div>
       </div>
+      <Splitter dir="row" onReset={resetDetailPct} onDrag={(_x, y) => {
+        const r = historyRef.current?.getBoundingClientRect()
+        if (r) setDetailPct(clamp(((r.bottom - y) / r.height) * 100, 15, 82))
+      }} />
       {shownCompare ? (
         <div className="compare-wrap">
           <div className="compare-bar">

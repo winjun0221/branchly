@@ -177,5 +177,10 @@
   "정하기": "Set",
   "{branch}이(가) Pull·Push에 쓸 원격 브랜치를 골라요.": "Choose the remote branch that {branch} pulls from and pushes to.",
   "원격 브랜치": "Remote branch",
-  "원격 브랜치가 없어요. 먼저 Fetch하거나 이 브랜치를 Push하세요.": "No remote branches. Fetch first, or push this branch."
+  "원격 브랜치가 없어요. 먼저 Fetch하거나 이 브랜치를 Push하세요.": "No remote branches. Fetch first, or push this branch.",
+  "Fetch · 마지막 자동 Fetch {time}": "Fetch · last auto fetch {time}",
+  "Fetch · {n}분마다 자동": "Fetch · automatic every {n} min",
+  "왼쪽으로 옮기기": "Move left",
+  "오른쪽으로 옮기기": "Move right",
+  "다른 탭 모두 닫기": "Close other tabs"
 }

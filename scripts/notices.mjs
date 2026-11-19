@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const RENDERER = ['react', 'react-dom', 'scheduler', '@tanstack/react-query', '@tanstack/query-core', 'lucide-react', 'pretendard']
+const RENDERER = ['react', 'react-dom', 'scheduler', '@tanstack/react-query', '@tanstack/query-core', 'lucide-react', 'pretendard', 'highlight.js']
 
 const meta = await build({
   entryPoints: [path.join(root, 'src/main/main.ts'), path.join(root, 'src/main/preload.ts')],

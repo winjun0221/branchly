@@ -12,6 +12,7 @@ import { useUi, type MenuItem } from '../ui'
 import { lastLines, useWs } from '../ws'
 import DiffView from './DiffView'
 import { buildFileTree, FileRow, FolderRow, type FileTreeNode } from './FileList'
+import { clamp, Splitter, usePaneSize } from './Splitter'
 
 type Section = 'conflicted' | 'staged' | 'unstaged'
 const IMAGE = /\.(png|jpe?g|gif|webp|bmp|ico)$/i
@@ -34,6 +35,8 @@ function saveDraft(repo: string, d: { summary: string; desc: string }) {
 /** 변경 사항: 왼쪽 = 충돌·스테이지됨·변경됨 목록 + 커밋, 오른쪽 = 변경 내용(덩어리·줄 단위 올리기) */
 export default function ChangesView() {
   const ws = useWs()
+  const [left, setLeft, resetLeft] = usePaneSize('changesLeft', 400)
+  const changesRef = useRef<HTMLDivElement>(null)
   const ui = useUi()
   const a = useActions()
   const s = ws.status
@@ -216,7 +219,7 @@ export default function ChangesView() {
   const multi = sel.paths.length > 1 ? sel : null
 
   return (
-    <div className="changes">
+    <div className="changes" ref={changesRef} style={{ gridTemplateColumns: `${left}px 0 minmax(0, 1fr)` }}>
       <div className="changes-side">
         <div className="changes-bar">
           <b>{t('변경 사항')}</b>
@@ -265,6 +268,10 @@ export default function ChangesView() {
 
         <CommitBox stagedCount={staged.length} conflicts={conflicted.length} />
       </div>
+      <Splitter dir="col" onReset={resetLeft} onDrag={(x) => {
+        const r = changesRef.current?.getBoundingClientRect()
+        if (r) setLeft(clamp(x - r.left, 280, r.width - 320))
+      }} />
       <DiffView
         path={focus?.path ?? null}
         raw={isConflict ? undefined : diff.data}

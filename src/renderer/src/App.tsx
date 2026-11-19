@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { FolderGit2, Plus, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FolderGit2, FolderOpen, Plus, X, XCircle } from 'lucide-react'
 import type { RepoInfo } from '../../shared/types'
 import { api, DEFAULT_SETTINGS, errorText, useBranches, useRefreshRepo, useRemotes, useSettings, useStashes, useStatus } from './api'
 import { resolveLang } from '../../shared/i18n'
@@ -14,6 +14,7 @@ import Sidebar from './components/Sidebar'
 import HistoryView from './components/HistoryView'
 import ChangesView from './components/ChangesView'
 import UpdateChip from './components/UpdateChip'
+import { clamp, Splitter, usePaneSize } from './components/Splitter'
 
 const TABS_KEY = 'branchly.tabs'
 const ACTIVE_KEY = 'branchly.activeTab'
@@ -110,6 +111,35 @@ function Shell() {
     }
   }, [booting, openTab, ui])
 
+  /** 탭 순서 바꾸기: from을 to 앞(after면 뒤)으로 */
+  const moveTab = useCallback((from: string, to: string, after: boolean) => {
+    setTabs((ts) => {
+      if (from === to) return ts
+      const moving = ts.find((x) => x.path === from)
+      if (!moving) return ts
+      const rest = ts.filter((x) => x.path !== from)
+      const i = rest.findIndex((x) => x.path === to)
+      if (i < 0) return ts
+      rest.splice(after ? i + 1 : i, 0, moving)
+      return rest
+    })
+  }, [])
+  const [drag, setDrag] = useState<{ from: string; over: string | null; after: boolean } | null>(null)
+
+  const tabMenu = (e: React.MouseEvent, tab: RepoInfo) => {
+    const i = tabs.findIndex((x) => x.path === tab.path)
+    ui.menu(e, [
+      { section: tab.name },
+      { label: t('왼쪽으로 옮기기'), icon: ArrowLeft, disabled: i <= 0, onClick: () => moveTab(tab.path, tabs[i - 1].path, false) },
+      { label: t('오른쪽으로 옮기기'), icon: ArrowRight, disabled: i >= tabs.length - 1, onClick: () => moveTab(tab.path, tabs[i + 1].path, true) },
+      'sep',
+      { label: t('탐색기에서 열기'), icon: FolderOpen, onClick: () => void api.showInFolder(tab.path, null).catch((err) => ui.notify(errorText(err), 'error')) },
+      'sep',
+      { label: t('탭 닫기'), icon: X, onClick: () => closeTab(tab.path) },
+      { label: t('다른 탭 모두 닫기'), icon: XCircle, disabled: tabs.length < 2, onClick: () => { setTabs([tab]); setActive(tab.path) } },
+    ])
+  }
+
   const closeTab = useCallback((path: string) => {
     setTabs((t) => {
       const i = t.findIndex((x) => x.path === path)
@@ -149,8 +179,32 @@ function Shell() {
     <div className="app">
       <nav className="tabbar" role="tablist">
         {tabs.map((tab) => (
-          <div key={tab.path} role="tab" aria-selected={tab.path === active} className={`tab ${tab.path === active ? 'on' : ''}`}
-            title={tab.path} onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); closeTab(tab.path) } else setActive(tab.path) }}>
+          <div key={tab.path} role="tab" aria-selected={tab.path === active}
+            className={`tab ${tab.path === active ? 'on' : ''} ${drag?.from === tab.path ? 'dragging' : ''} ${drag?.over === tab.path && drag.from !== tab.path ? (drag.after ? 'drop-after' : 'drop-before') : ''}`}
+            title={tab.path}
+            draggable
+            onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); closeTab(tab.path) } else if (e.button === 0) setActive(tab.path) }}
+            onContextMenu={(e) => tabMenu(e, tab)}
+            // 드래그로 순서 바꾸기: 놓을 탭의 왼쪽 절반이면 앞, 오른쪽 절반이면 뒤
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = 'move'
+              e.dataTransfer.setData('text/plain', tab.path)
+              setDrag({ from: tab.path, over: null, after: false })
+            }}
+            onDragOver={(e) => {
+              if (!drag) return
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+              const r = e.currentTarget.getBoundingClientRect()
+              const after = e.clientX > r.left + r.width / 2
+              if (drag.over !== tab.path || drag.after !== after) setDrag({ ...drag, over: tab.path, after })
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (drag) moveTab(drag.from, tab.path, drag.after)
+              setDrag(null)
+            }}
+            onDragEnd={() => setDrag(null)}>
             <FolderGit2 />
             <span className="ellipsis">{tab.name}</span>
             <button className="tab-close" aria-label={t('탭 닫기')} onMouseDown={(e) => e.stopPropagation()} onClick={() => closeTab(tab.path)}><X /></button>
@@ -196,6 +250,38 @@ function Workspace({ info }: { info: RepoInfo }) {
   }, [outside, qc, repo, status.data, branches.data])
 
   const refresh = useCallback(() => refreshRepo(repo), [refreshRepo, repo])
+  const [side, setSide, resetSide] = usePaneSize('side', 230)
+  const bodyRef = useRef<HTMLDivElement>(null)
+
+  // 원격 자동 Fetch: 설정한 간격마다 조용히(로그인 창 없이) 받아서 ↓n 표시를 새로 고친다. 실패해도 알림을 띄우지 않는다
+  const [lastAutoFetch, setLastAutoFetch] = useState<number | null>(null)
+  const hasRemote = (remotes.data?.length ?? 0) > 0
+  const busyRef = useRef(busy)
+  busyRef.current = busy
+  useEffect(() => {
+    const minutes = settings.autoFetchMinutes
+    if (!hasRemote || !minutes) return
+    let running = false
+    const tick = async () => {
+      if (running || busyRef.current) return
+      running = true
+      try {
+        await api.fetch(repo, { remote: null, prune: false, tags: false, background: true })
+        setLastAutoFetch(Date.now())
+        refreshRepo(repo)
+      } catch {
+        // 인증이 필요하거나 네트워크가 없으면 조용히 넘어간다 (직접 Fetch를 누르면 이유가 보임)
+      } finally {
+        running = false
+      }
+    }
+    const first = window.setTimeout(tick, Math.min(15_000, minutes * 60_000))
+    const timer = window.setInterval(tick, minutes * 60_000)
+    return () => {
+      window.clearTimeout(first)
+      window.clearInterval(timer)
+    }
+  }, [repo, hasRemote, settings.autoFetchMinutes, refreshRepo])
 
   const run = useCallback<Ws['run']>(async (label, fn, success) => {
     pending.current++
@@ -236,9 +322,10 @@ function Workspace({ info }: { info: RepoInfo }) {
     diffOpts: { ignoreWhitespace: ignoreWs ?? settings.ignoreWhitespace },
     setIgnoreWhitespace: setIgnoreWs,
     busy,
+    lastAutoFetch,
     run,
     refresh,
-  }), [repo, info, status.data, branches.data, remotes.data, stashes.data, settings, view, ignoreWs, busy, run, refresh])
+  }), [repo, info, status.data, branches.data, remotes.data, stashes.data, settings, view, ignoreWs, busy, lastAutoFetch, run, refresh])
 
   // F5 새로고침
   useEffect(() => {
@@ -257,8 +344,12 @@ function Workspace({ info }: { info: RepoInfo }) {
       <div className="workspace">
         <Toolbar />
         <OperationBanner />
-        <div className="body">
+        <div className="body" ref={bodyRef} style={{ gridTemplateColumns: `${side}px 0 minmax(0, 1fr)` }}>
           <Sidebar />
+          <Splitter dir="col" onReset={resetSide} onDrag={(x) => {
+            const r = bodyRef.current?.getBoundingClientRect()
+            if (r) setSide(clamp(x - r.left, 170, Math.min(460, r.width - 520)))
+          }} />
           <main className="main">
             {status.error && <div className="banner error">{errorText(status.error)}</div>}
             {view === 'history' ? <HistoryView focus={focus} onFocusTaken={() => setFocus(null)} /> : <ChangesView />}

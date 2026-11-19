@@ -500,6 +500,11 @@ export async function fetch(repo: string, o: FetchOptions): Promise<string> {
   else args.push('--all')
   if (o.prune) args.push('--prune')
   if (o.tags) args.push('--tags')
+  if (o.background) {
+    // 자동 Fetch는 몰래 도는 거라 로그인 창(Git Credential Manager)을 띄우지 않는다. 인증이 필요하면 그냥 실패
+    args.push('--quiet')
+    return out(await git(repo, args, { env: { GCM_INTERACTIVE: 'never', GIT_TERMINAL_PROMPT: '0' } }))
+  }
   return out(await git(repo, args))
 }
 

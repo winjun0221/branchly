@@ -170,5 +170,6 @@
   "올리기|stage": "Stage",
   "원격|section": "Remotes",
   "충돌|section": "Conflicts",
-  "브랜치|section": "Branches"
+  "브랜치|section": "Branches",
+  "드래그해서 크기 조절 · 더블클릭하면 처음 크기": "Drag to resize · double-click to reset"
 }

@@ -7,6 +7,7 @@ import { splitPath } from '../format'
 import { t, tx } from '../i18n'
 import { useUi } from '../ui'
 import { useWs } from '../ws'
+import { highlightLine, languageFor } from '../highlight'
 
 const MAX_LINES = 5000
 
@@ -41,6 +42,27 @@ export default function DiffView({ path, raw, loading, error, stage, images, con
     setSel(new Set())
     setAnchor(null)
   }, [raw, path])
+
+  // 코드 색칠: 줄마다 HTML (설정에서 끌 수 있음)
+  const lang = path && ws.settings.syntaxHighlight ? languageFor(path) : null
+  const colored = useMemo(() => {
+    const m = new Map<DiffLine, string>()
+    if (!diff || diff.binary || !lang) return m
+    let budget = MAX_LINES
+    for (const h of diff.hunks) {
+      for (const l of h.lines) {
+        if (budget-- <= 0) return m
+        if (l.type === 'note') continue
+        const html = highlightLine(l.text, lang)
+        if (html) m.set(l, html)
+      }
+    }
+    return m
+  }, [diff, lang])
+  const code = (l: DiffLine): ReactNode => {
+    const html = colored.get(l)
+    return html ? <span className="hl" dangerouslySetInnerHTML={{ __html: html }} /> : l.text || ' '
+  }
 
   if (!path) {
     return (
@@ -126,9 +148,9 @@ export default function DiffView({ path, raw, loading, error, stage, images, con
                   {pairs.map(([l, r], k) => (
                     <tr key={k} className="line">
                       <td className={`ln ${l?.type ?? 'none'}`}>{l?.oldNo ?? ''}</td>
-                      <td className={`code half ${l ? l.type : 'none'}`}>{l ? l.text || ' ' : ''}</td>
+                      <td className={`code half ${l ? l.type : 'none'}`}>{l ? code(l) : ''}</td>
                       <td className={`ln ${r?.type ?? 'none'}`}>{r?.newNo ?? ''}</td>
-                      <td className={`code half ${r ? r.type : 'none'}`}>{r ? r.text || ' ' : ''}</td>
+                      <td className={`code half ${r ? r.type : 'none'}`}>{r ? code(r) : ''}</td>
                     </tr>
                   ))}
                 </Fragment>
@@ -158,7 +180,7 @@ export default function DiffView({ path, raw, loading, error, stage, images, con
                       <td className={`ln ${pickable ? 'pick' : ''}`} onMouseDown={pickable ? (e) => { e.preventDefault(); toggleLine(key, e.shiftKey) } : undefined}
                         title={pickable ? t('눌러서 이 줄 고르기 (Shift: 범위)') : undefined}>{l.oldNo ?? ''}</td>
                       <td className={`ln ${pickable ? 'pick' : ''}`} onMouseDown={pickable ? (e) => { e.preventDefault(); toggleLine(key, e.shiftKey) } : undefined}>{l.newNo ?? ''}</td>
-                      <td className="code"><span className="sign">{l.type === 'add' ? '+' : l.type === 'del' ? '−' : ' '}</span>{l.text || ' '}</td>
+                      <td className="code"><span className="sign">{l.type === 'add' ? '+' : l.type === 'del' ? '−' : ' '}</span>{code(l)}</td>
                     </tr>
                   )
                 })}

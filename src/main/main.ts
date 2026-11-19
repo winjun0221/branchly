@@ -86,7 +86,7 @@ function dirFromArgs(args: string[]): string | null {
 
 // ───────── 앱 설정 ─────────
 
-const DEFAULT_SETTINGS: AppSettings = { theme: 'system', editor: '', diffFontSize: 12, sideBySide: false, ignoreWhitespace: false, zoom: 0, autoUpdate: true, language: 'auto' }
+const DEFAULT_SETTINGS: AppSettings = { theme: 'system', editor: '', diffFontSize: 12, sideBySide: false, ignoreWhitespace: false, zoom: 0, autoUpdate: true, language: 'auto', autoFetchMinutes: 10, syntaxHighlight: true }
 
 function normalizeSettings(v: unknown): AppSettings {
   const o = typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {}
@@ -101,6 +101,9 @@ function normalizeSettings(v: unknown): AppSettings {
     zoom: typeof o.zoom === 'number' && o.zoom >= 0.8 && o.zoom <= 1.75 ? Math.round(o.zoom * 100) / 100 : 0,
     autoUpdate: o.autoUpdate !== false,
     language: o.language === 'ko' || o.language === 'en' ? o.language : 'auto',
+    // 화면에서는 끔·5·10·30분만 고르지만, 테스트는 짧게(0.05분~) 줄 수 있게
+    autoFetchMinutes: typeof o.autoFetchMinutes === 'number' && o.autoFetchMinutes >= 0 && o.autoFetchMinutes <= 240 ? (o.autoFetchMinutes < 0.05 ? 0 : o.autoFetchMinutes) : 10,
+    syntaxHighlight: o.syntaxHighlight !== false,
   }
 }
 
@@ -396,7 +399,7 @@ const handlers: Handlers = {
   // 원격
   fetch: async (r, o) => {
     const f = checkObject(o)
-    return repo.fetch(checkRepo(r), { remote: optRemote(f.remote), prune: f.prune === true, tags: f.tags === true })
+    return repo.fetch(checkRepo(r), { remote: optRemote(f.remote), prune: f.prune === true, tags: f.tags === true, background: f.background === true })
   },
   pull: async (r, o) => {
     const p = checkObject(o)

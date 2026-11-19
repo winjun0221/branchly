@@ -112,5 +112,10 @@
   "히스토리에서 보기": "Show in history",
   "기록이 없어요 (아직 커밋하지 않은 파일)": "No history (file not committed yet)",
   "줄별 작성자 · {path}": "Blame · {path}",
-  "아직 커밋 안 함": "Not committed yet"
+  "아직 커밋 안 함": "Not committed yet",
+  "원격 자동 Fetch": "Auto fetch",
+  "정해진 간격마다 원격의 새 커밋을 조용히 확인해서 ↓ 표시를 새로 고쳐요. 로그인이 필요한 원격은 건너뛰어요.": "Quietly checks remotes for new commits at this interval and updates the ↓ counts. Remotes that need a sign-in are skipped.",
+  "끄기": "Off",
+  "{n}분": "{n} min",
+  "변경 내용에 코드 색칠하기 (문법 강조)": "Color code in diffs (syntax highlighting)"
 }

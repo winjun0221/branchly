@@ -46,7 +46,7 @@ export const useRangeDiff = (repo: string, from: string | null, to: string | nul
 // 배율은 단축키(Ctrl +/-/0)로 메인 쪽에서도 바뀌므로 화면을 열 때마다 다시 읽는다
 export const useSettings = () => useQuery({ queryKey: ['settings'], queryFn: () => api.settings(), staleTime: Infinity, refetchOnMount: 'always' })
 
-export const DEFAULT_SETTINGS: AppSettings = { theme: 'system', editor: '', diffFontSize: 12, sideBySide: false, ignoreWhitespace: false, zoom: 0, autoUpdate: true, language: 'auto' }
+export const DEFAULT_SETTINGS: AppSettings = { theme: 'system', editor: '', diffFontSize: 12, sideBySide: false, ignoreWhitespace: false, zoom: 0, autoUpdate: true, language: 'auto', autoFetchMinutes: 10, syntaxHighlight: true }
 
 export function useRefreshRepo() {
   const qc = useQueryClient()

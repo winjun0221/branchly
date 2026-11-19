@@ -66,12 +66,20 @@ function General() {
           ))}
         </div>
       </Field>
+      <Field label={t('원격 자동 Fetch')} hint={t('정해진 간격마다 원격의 새 커밋을 조용히 확인해서 ↓ 표시를 새로 고쳐요. 로그인이 필요한 원격은 건너뛰어요.')}>
+        <div className="seg">
+          {([[0, t('끄기')], [5, t('{n}분', { n: 5 })], [10, t('{n}분', { n: 10 })], [30, t('{n}분', { n: 30 })]] as const).map(([v, label]) => (
+            <button key={v} type="button" className={current.autoFetchMinutes === v ? 'on' : ''} onClick={() => save({ autoFetchMinutes: v })}>{label}</button>
+          ))}
+        </div>
+      </Field>
       <Field label={t('변경 내용 글자 크기')}>
         <div className="row">
           <input type="range" min={10} max={20} value={current.diffFontSize} onChange={(e) => save({ diffFontSize: Number(e.target.value) })} />
           <span className="mono">{current.diffFontSize}px</span>
         </div>
       </Field>
+      <Check checked={current.syntaxHighlight} onChange={(v) => save({ syntaxHighlight: v })}>{t('변경 내용에 코드 색칠하기 (문법 강조)')}</Check>
       <Check checked={current.sideBySide} onChange={(v) => save({ sideBySide: v })}>{t('변경 내용을 기본으로 나란히(좌우) 보기')}</Check>
       <Check checked={current.ignoreWhitespace} onChange={(v) => save({ ignoreWhitespace: v })}>{t('기본으로 공백 변경 무시하기')}</Check>
       <Field label={t('외부 편집기')} hint={t('파일 열기에 쓸 실행 파일(.exe) 전체 경로. 비우면 Windows 기본 프로그램으로 열어요. 예: C:\\Users\\me\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe')}>

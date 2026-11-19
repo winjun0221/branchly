@@ -158,6 +158,8 @@ export interface FetchOptions {
   remote: string | null
   prune: boolean
   tags: boolean
+  /** 자동 Fetch: 로그인 창을 띄우지 않고 조용히(실패해도 넘어감) */
+  background?: boolean
 }
 
 export interface PullOptions {
@@ -219,6 +221,10 @@ export interface AppSettings {
   autoUpdate: boolean
   /** 화면 언어. auto = Windows 언어(한국어가 아니면 영어) */
   language: 'auto' | 'ko' | 'en'
+  /** 원격 자동 Fetch 간격(분). 0 = 끔 */
+  autoFetchMinutes: number
+  /** 변경 내용 코드 색칠 */
+  syntaxHighlight: boolean
 }
 
 export type UpdateState = 'disabled' | 'idle' | 'checking' | 'latest' | 'downloading' | 'ready' | 'error'

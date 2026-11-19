@@ -7,6 +7,7 @@ import { webRepo } from '../../../shared/hosting'
 import { useActions } from '../actions'
 import { useUi, type MenuItem } from '../ui'
 import { useWs } from '../ws'
+import { relativeTime } from '../format'
 import { t } from '../i18n'
 
 /** 위쪽 막대: 자주 쓰는 git 작업 버튼 */
@@ -17,6 +18,9 @@ export default function Toolbar() {
   const s = ws.status
   const changes = s ? new Set([...s.staged, ...s.unstaged, ...s.conflicted].map((f) => f.path)).size : 0
   const noRemote = ws.remotes.length === 0
+  const fetchTitle = ws.lastAutoFetch
+    ? t('Fetch · 마지막 자동 Fetch {time}', { time: relativeTime(Math.floor(ws.lastAutoFetch / 1000)) })
+    : ws.settings.autoFetchMinutes ? t('Fetch · {n}분마다 자동', { n: ws.settings.autoFetchMinutes }) : t('Fetch')
   const local = ws.branches?.local ?? []
 
   const below = (e: MouseEvent, items: MenuItem[]) => {
@@ -71,7 +75,7 @@ export default function Toolbar() {
         <Tool icon={GitCommitHorizontal} label={t('커밋')} onClick={() => ws.setView('changes')} badge={changes} />
       </div>
       <div className="tool-group">
-        <Tool icon={CloudDownload} label={t('Fetch')} onClick={a.fetch} disabled={noRemote} />
+        <Tool icon={CloudDownload} label={t('Fetch')} onClick={a.fetch} disabled={noRemote} title={fetchTitle} />
         <Tool icon={ArrowDownToLine} label={t('Pull')} onClick={a.pull} disabled={noRemote} badge={s?.behind} />
         <Tool icon={ArrowUpFromLine} label={t('Push')} onClick={a.push} disabled={noRemote} badge={s?.ahead} />
       </div>
@@ -93,15 +97,16 @@ export default function Toolbar() {
   )
 }
 
-function Tool({ icon: Icon, label, onClick, disabled, badge }: {
+function Tool({ icon: Icon, label, onClick, disabled, badge, title }: {
   icon: typeof GitBranch
   label: string
   onClick: (e: MouseEvent) => void
   disabled?: boolean
   badge?: number
+  title?: string
 }) {
   return (
-    <button className="tool-btn" onClick={onClick} disabled={disabled} title={label}>
+    <button className="tool-btn" onClick={onClick} disabled={disabled} title={title ?? label}>
       <Icon />
       <span>{label}</span>
       {!!badge && <span className="dot">{badge > 99 ? '99+' : badge}</span>}

@@ -38,7 +38,7 @@ async function until(fn, ms = 10000) {
 
 // 한국어로 시작 (선택자가 한국어 문구를 씀). 끝에서 영어로 바꿔 확인한다
 fs.mkdirSync(path.join(out, 'userdata'), { recursive: true })
-fs.writeFileSync(path.join(out, 'userdata', 'settings.json'), JSON.stringify({ language: 'ko' }))
+fs.writeFileSync(path.join(out, 'userdata', 'settings.json'), JSON.stringify({ language: 'ko', autoFetchMinutes: 0.1 }))
 
 const electronPath = (await import('electron')).default
 const app = await electron.launch({
@@ -64,6 +64,23 @@ try {
   check('repo tab', (await win.locator('.tab.on').innerText()).includes('sample'))
   check('branch chip shows ahead 1', (await win.locator('.branch-chip').innerText()).includes('↑1'))
   check('ref badges', (await win.locator('.ref.head').count()) === 1 && (await win.locator('.ref.tag').count()) >= 2)
+
+  // 칸 경계 끌기: 사이드바를 80px 넓힘 → 더블클릭하면 처음 크기
+  const sideBefore = (await win.locator('.sidebar').boundingBox()).width
+  // 화면에 뜬 테스트 창 위로 실제 마우스가 지나가도 섞이지 않게, 드래그를 페이지 안에서 한 번에 보낸다
+  const dragSplitter = (dx) => win.evaluate((dx) => {
+    const el = document.querySelector('.body > .splitter.col')
+    const r = el.getBoundingClientRect()
+    const at = (x) => ({ bubbles: true, cancelable: true, clientX: x, clientY: r.top + 200, button: 0, buttons: 1 })
+    el.dispatchEvent(new MouseEvent('mousedown', at(r.left)))
+    for (let i = 1; i <= 4; i++) document.dispatchEvent(new MouseEvent('mousemove', at(r.left + (dx * i) / 4)))
+    document.dispatchEvent(new MouseEvent('mouseup', { ...at(r.left + dx), buttons: 0 }))
+  }, dx)
+  await dragSplitter(80)
+  const sideAfter = (await win.locator('.sidebar').boundingBox()).width
+  check('drag splitter resizes sidebar', Math.abs(sideAfter - sideBefore - 80) <= 3, `${Math.round(sideBefore)} → ${Math.round(sideAfter)}`)
+  await win.evaluate(() => document.querySelector('.body > .splitter.col').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })))
+  check('double-click resets sidebar', await until(async () => Math.abs((await win.locator('.sidebar').boundingBox()).width - sideBefore) <= 2))
   check('uncommitted row', (await win.locator('.pending-row').innerText()).includes('3'))
   await win.waitForSelector('.detail-meta h2')
   await shot(win, '1-history.png')
@@ -198,10 +215,22 @@ try {
   await submit()
   check('push main', await until(() => execFileSync('git', ['rev-parse', 'main'], { cwd: origin, encoding: 'utf8' }).trim() === git('rev-parse', 'main')))
 
+  // ── 자동 Fetch: 다른 사람이 원격에 올린 커밋을 누르지 않아도 알아챔 ──
+  const other = path.join(out, 'other-clone')
+  const gEnv = { ...process.env, GIT_CONFIG_GLOBAL: globalConfig }
+  execFileSync('git', ['clone', '-q', '-b', 'main', origin, other], { env: gEnv })
+  execFileSync('git', ['-c', 'user.name=Other', '-c', 'user.email=other@example.com', 'commit', '-q', '--allow-empty', '-m', '다른 사람 커밋'], { cwd: other, env: gEnv })
+  execFileSync('git', ['push', '-q', 'origin', 'HEAD:main'], { cwd: other, env: gEnv })
+  check('auto fetch notices new remote commit', await until(async () => (await win.locator('.branch-chip').innerText()).includes('↓1'), 30000))
+  execFileSync('git', ['pull', '-q', '--no-rebase', 'origin', 'main'], { cwd: repo, env: gEnv })
+
   // ── 파일 기록·blame ──
   await win.locator('.side-item', { hasText: '히스토리' }).click()
   await win.locator('.commit-row', { hasText: '앱 뼈대 추가' }).click()
   await win.waitForSelector('.detail-files .file-row')
+  await win.locator('.detail-files .file-row', { hasText: 'app.ts' }).click()
+  check('syntax highlighting in diff', await until(async () => (await win.locator('.diff-table .hl .hljs-keyword').count()) > 0))
+  await shot(win, '6a-highlight.png')
   await menu(win.locator('.detail-files .file-row', { hasText: 'app.ts' }), '파일 기록')
   await win.waitForSelector('.split-list .list-row')
   check('file history', (await win.locator('.split-list .list-row').count()) >= 3)
@@ -274,6 +303,24 @@ try {
   if (!exited) again.kill()
   check('second launch exits (single instance)', exited)
   check('second launch opens a tab in the first window', await until(async () => (await win.locator('.tab', { hasText: 'second-repo' }).count()) === 1, 10000))
+
+  // ── 탭 순서 바꾸기: second-repo 탭을 sample 탭 앞으로 끌어다 놓기 ──
+  const tabOrder = () => win.evaluate(() => [...document.querySelectorAll('.tab .ellipsis')].map((e) => e.textContent))
+  const before = await tabOrder()
+  const fire = (type, which, edge) => win.evaluate(({ type, which, edge }) => {
+    const el = [...document.querySelectorAll('.tab')].find((x) => x.textContent.includes(which))
+    const r = el.getBoundingClientRect()
+    window.__dt ??= new DataTransfer()
+    el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: window.__dt, clientX: edge === 'left' ? r.left + 4 : r.right - 4, clientY: r.top + 5 }))
+  }, { type, which, edge })
+  await fire('dragstart', 'second-repo', 'left')
+  await sleep(50)
+  await fire('dragover', 'sample', 'left')
+  await sleep(50)
+  await fire('drop', 'sample', 'left')
+  await fire('dragend', 'second-repo', 'left')
+  const after = await tabOrder()
+  check('drag tab to reorder', before.join() === 'sample,second-repo' && after.join() === 'second-repo,sample', `${before} → ${after}`)
 } catch (e) {
   check('unexpected error', false, String(e?.message ?? e).split('\n').slice(0, 6).join(' | '))
   try {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Copy, Download, ExternalLink, FileText, FolderOpen, GitCommitHorizontal, History, Layers, ScanEye } from 'lucide-react'
 import { commitUrl, webRepo } from '../../../shared/hosting'
@@ -11,12 +11,15 @@ import { useUi, type MenuItem } from '../ui'
 import { short, useWs } from '../ws'
 import DiffView from './DiffView'
 import { FileRow } from './FileList'
+import { clamp, Splitter, usePaneSize } from './Splitter'
 
 const IMAGE = /\.(png|jpe?g|gif|webp|bmp|ico)$/i
 
 /** 고른 커밋(또는 두 커밋 사이): 왼쪽 = 정보·바뀐 파일, 오른쪽 = 파일 변경 내용 */
 export default function CommitDetail({ repo, sha, compare, multi = 1 }: { repo: string; sha: string | null; compare?: { from: string; to: string } | null; multi?: number }) {
   const ws = useWs()
+  const [left, setLeft, resetLeft] = usePaneSize('detailFiles', 380)
+  const detailRef = useRef<HTMLDivElement>(null)
   const ui = useUi()
   const a = useActions()
   const detail = useCommitDetail(repo, compare ? null : sha)
@@ -72,7 +75,7 @@ export default function CommitDetail({ repo, sha, compare, multi = 1 }: { repo: 
   const web = origin ? webRepo(origin.fetchUrl) : null
 
   return (
-    <div className="detail">
+    <div className="detail" ref={detailRef} style={{ gridTemplateColumns: `${left}px 0 minmax(0, 1fr)` }}>
       <div className="detail-side">
         {!compare && detail.isPending && <p className="muted pad">{t('불러오는 중…')}</p>}
         {d && (
@@ -110,6 +113,10 @@ export default function CommitDetail({ repo, sha, compare, multi = 1 }: { repo: 
           {files?.length === 0 && <p className="muted pad small">{t('바뀐 파일이 없어요')}</p>}
         </div>
       </div>
+      <Splitter dir="col" onReset={resetLeft} onDrag={(x) => {
+        const r = detailRef.current?.getBoundingClientRect()
+        if (r) setLeft(clamp(x - r.left, 220, r.width - 320))
+      }} />
       <DiffView path={file} raw={diff.data} loading={diff.isFetching && !diff.data} error={diff.error} images={isImage ? images.data : null} />
     </div>
   )
