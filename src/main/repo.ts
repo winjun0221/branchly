@@ -194,6 +194,13 @@ export async function diffRangeFile(repo: string, from: string, to: string, file
   return (await git(repo, ['diff', '-M', '--no-ext-diff', ...ws(o), from, to, '--', file])).stdout
 }
 
+/** 충돌 블록을 고른 결과 저장. 저장소 안의 이미 있는 파일만(새로 만들지 않음) */
+export function writeWorkingFile(repo: string, file: string, text: string): void {
+  const full = path.join(repo, file)
+  if (!fs.existsSync(full) || !fs.statSync(full).isFile()) throw new Error(t('파일이 없습니다: {file}', { file }))
+  fs.writeFileSync(full, text, 'utf8')
+}
+
 /** 작업 폴더의 파일 내용 (충돌 표시 보기 등). 2MB 넘으면 내용 없이 */
 export function readWorkingFile(repo: string, file: string): FileContent {
   const full = path.join(repo, file)

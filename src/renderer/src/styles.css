@@ -730,3 +730,21 @@ body.resizing-row, body.resizing-row * { cursor: row-resize !important; user-sel
 .tab.dragging { opacity: 0.45; }
 .tab.drop-before { box-shadow: inset 3px 0 0 var(--accent); }
 .tab.drop-after { box-shadow: inset -3px 0 0 var(--accent); }
+
+/* ───────── 충돌 블록 고르기 ───────── */
+.cf-count { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #b07800; }
+.cf-count svg { width: 14px; height: 14px; }
+.cf-count.done { color: var(--ok); }
+.conflict-view .diff-table td { vertical-align: top; }
+.cf-row > td { padding: 6px 10px !important; }
+.cf-block { border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; font-family: var(--mono); }
+.cf-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(245, 165, 36, 0.14); font-family: 'Pretendard Variable', Pretendard, sans-serif; font-size: 12px; flex-wrap: wrap; }
+.cf-side { border-top: 1px solid var(--line); }
+.cf-side pre { margin: 0; padding: 6px 12px; font-family: var(--mono); white-space: pre-wrap; word-break: break-all; }
+.cf-label { padding: 3px 12px; font-size: 11px; font-weight: 700; font-family: 'Pretendard Variable', Pretendard, sans-serif; }
+.cf-ours { background: rgba(91, 140, 255, 0.08); }
+.cf-ours .cf-label { color: var(--accent); }
+.cf-theirs { background: rgba(168, 85, 247, 0.08); }
+.cf-theirs .cf-label { color: #8b5cf6; }
+.cf-base { background: var(--hover); }
+.cf-base .cf-label { color: var(--muted); }

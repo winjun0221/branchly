@@ -1,6 +1,6 @@
 # Branchly
 
-**한국어** · [English](README.en.md)
+**한국어** · [English](README.en.md) · [![CI](https://github.com/winjun0221/branchly/actions/workflows/ci.yml/badge.svg)](https://github.com/winjun0221/branchly/actions/workflows/ci.yml)
 
 **윈도우용 Git 관리 프로그램.** 커밋 그래프를 보면서 브랜치 만들기·병합·커밋·올리기를 클릭으로 할 수 있어요.
 명령어를 몰라도 되고, 충돌이 나도 화면에서 바로 풀 수 있어요.
@@ -35,7 +35,7 @@ Git이 없으면 처음 켤 때 설치 안내가 떠요.
 | | |
 |---|---|
 | ![줄 단위 스테이징](docs/screenshots/line-staging.png) | ![병합 충돌 해결](docs/screenshots/conflict.png) |
-| **줄 단위로 골라서 커밋** — 파일 통째로가 아니라 필요한 줄만 올리고, 필요 없는 변경은 버려요 | **충돌 해결** — 내 쪽·상대 쪽 중 고르거나 직접 고친 뒤, 계속·건너뛰기·중단 |
+| **줄 단위로 골라서 커밋** — 파일 통째로가 아니라 필요한 줄만 올리고, 필요 없는 변경은 버려요 | **충돌 해결** — 충돌 부분마다 내 쪽·상대 쪽·둘 다 골라서 풀고, 계속·건너뛰기·중단 |
 | ![대화형 리베이스](docs/screenshots/interactive-rebase.png) | ![어두운 모드](docs/screenshots/history-dark.png) |
 | **커밋 정리** — 순서 바꾸기·메시지 고치기·합치기·버리기를 목록에서 | **밝은·어두운 모드**, 창을 키우면 화면도 알맞게 커져요 |
 

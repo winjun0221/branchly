@@ -161,6 +161,12 @@ try {
   check('commit created', await until(() => git('log', '-1', '--format=%s') === '새 기능 메모와 버전 올림'))
   check('rest of README stays unstaged', git('diff', '--', 'README.md').includes('+npm start'))
 
+  // ── 폴더 감시: 앱 밖에서 만든·지운 파일이 30초 주기를 기다리지 않고 바로 보임 ──
+  fs.writeFileSync(path.join(repo, 'watch-test.txt'), '감시 확인')
+  check('watcher shows new file quickly', await until(async () => (await win.locator('.changes .file-row', { hasText: 'watch-test.txt' }).count()) === 1, 4000))
+  fs.rmSync(path.join(repo, 'watch-test.txt'))
+  check('watcher hides deleted file quickly', await until(async () => (await win.locator('.changes .file-row', { hasText: 'watch-test.txt' }).count()) === 0, 4000))
+
   // ── 스태시 ──
   await win.locator('.tool-btn', { hasText: '스태시' }).click()
   await win.fill('.dialog input', 'README 작업 중')
@@ -202,9 +208,13 @@ try {
   check('merge conflict banner', (await win.locator('.op-banner').innerText()).includes('병합 진행 중'))
   await win.waitForSelector('.file-section.danger .file-row')
   await win.locator('.file-section.danger .file-row').click()
-  await win.waitForSelector('.diff-table.conflict')
+  await win.waitForSelector('.cf-block')
   await shot(win, '5-conflict.png')
-  await menu(win.locator('.file-section.danger .file-row'), '상대 쪽')
+  // 블록 단위로 상대 쪽 고르기 → 파일에 반영 → 해결됨으로 표시
+  await win.locator('.cf-head .hunk-btn', { hasText: /^상대 쪽$/ }).click()
+  check('pick conflict block (theirs)', await until(async () => (await win.locator('.cf-count.done').count()) === 1
+    && fs.readFileSync(path.join(repo, 'docs', '회의록.md'), 'utf8').includes('다른 쪽') && !fs.readFileSync(path.join(repo, 'docs', '회의록.md'), 'utf8').includes('<<<<<<<')))
+  await win.locator('.line-bar .btn.primary', { hasText: '해결됨으로 표시' }).click()
   await win.waitForSelector('.op-banner.ok', { timeout: 10000 })
   await win.locator('.op-banner .btn.primary').click()
   check('merge completed', await until(() => git('log', '-1', '--format=%P').split(' ').length === 2 && fs.readFileSync(path.join(repo, 'docs', '회의록.md'), 'utf8').includes('다른 쪽')))
@@ -274,7 +284,7 @@ try {
   await win.locator('.toolbar .icon-btn[title="더 보기"]').click()
   await win.locator('.ctx-menu .menu-item', { hasText: '앱 설정' }).click()
   await win.locator('.dialog .seg button', { hasText: 'English' }).click()
-  check('switch to English', await until(async () => (await win.locator('.tool-btn', { hasText: 'Fetch' }).count()) === 1))
+  check('switch to English', await until(async () => (await win.locator('.tool-btn', { hasText: 'Commit' }).count()) === 1))
   // 툴바·사이드바·히스토리 머리에 한글이 남지 않았는지 (커밋 메시지 같은 저장소 내용은 빼고)
   const leftover = await win.evaluate(() => ['.toolbar', '.sidebar', '.history-bar', '.commit-head', '.detail-files h3', '.tabbar']
     .map((s) => document.querySelector(s)?.textContent ?? '').join(' ').match(/[가-힣]+/g))

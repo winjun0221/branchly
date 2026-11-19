@@ -283,6 +283,8 @@ export interface Api {
   diffRange(repo: string, from: string, to: string): Promise<FileChange[]>
   diffRangeFile(repo: string, from: string, to: string, path: string, opts: DiffOptions): Promise<string>
   readWorkingFile(repo: string, path: string): Promise<FileContent>
+  /** 충돌 블록을 고른 결과 저장 (저장소 안의 이미 있는 파일만) */
+  writeWorkingFile(repo: string, path: string, text: string): Promise<void>
   imagePreview(repo: string, rev: string | null, path: string): Promise<string | null>
   blame(repo: string, path: string, rev: string | null): Promise<BlameLine[]>
   fileLog(repo: string, path: string, limit: number): Promise<Commit[]>
@@ -377,7 +379,7 @@ export interface Api {
 export const API_METHODS = [
   'pickRepo', 'openRepo', 'recentRepos', 'forgetRepo', 'startupRepo', 'takePendingOpen', 'pickFolder', 'cloneRepo', 'initRepo',
   'status', 'log', 'branches', 'stashes', 'remotes', 'submodules', 'commitDetail', 'diffWorking', 'diffCommit',
-  'diffRange', 'diffRangeFile', 'readWorkingFile', 'imagePreview', 'blame', 'fileLog', 'lastCommitMessage',
+  'diffRange', 'diffRangeFile', 'readWorkingFile', 'writeWorkingFile', 'imagePreview', 'blame', 'fileLog', 'lastCommitMessage',
   'recentMessages', 'rebaseSteps',
   'stage', 'unstage', 'applyPatch', 'discard', 'ignore', 'untrack', 'commit', 'resolveConflict', 'mergeTool',
   'checkout', 'checkoutDetached', 'checkoutRemote', 'createBranch', 'renameBranch', 'deleteBranch',

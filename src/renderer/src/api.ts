@@ -4,6 +4,7 @@ import type { Api, AppSettings, DiffKind, DiffOptions, LogQuery } from '../../sh
 declare global {
   interface Window {
     api: Api
+    branchlyEvents: { onRepoChanged(cb: (repo: string, kind: 'work' | 'git') => void): () => void }
   }
 }
 
@@ -12,13 +13,14 @@ export const api = window.api
 // 저장소마다 쿼리 키 두 번째 칸이 저장소 경로 → 쓰기 뒤 refreshRepo(repo)로 한 번에 새로고침
 
 export const useStatus = (repo: string) =>
-  useQuery({ queryKey: ['status', repo], queryFn: () => api.status(repo), refetchInterval: 5_000 })
+  // 바뀌면 폴더 감시가 바로 알려 주고(App의 onRepoChanged), 이 주기는 감시가 놓친 경우를 받치는 정도
+  useQuery({ queryKey: ['status', repo], queryFn: () => api.status(repo), refetchInterval: 30_000 })
 
 export const useLog = (repo: string, q: LogQuery) =>
   useQuery({ queryKey: ['log', repo, q], queryFn: () => api.log(repo, q), placeholderData: (prev) => prev })
 
-export const useBranches = (repo: string) => useQuery({ queryKey: ['branches', repo], queryFn: () => api.branches(repo), refetchInterval: 10_000 })
-export const useStashes = (repo: string) => useQuery({ queryKey: ['stashes', repo], queryFn: () => api.stashes(repo), refetchInterval: 15_000 })
+export const useBranches = (repo: string) => useQuery({ queryKey: ['branches', repo], queryFn: () => api.branches(repo), refetchInterval: 60_000 })
+export const useStashes = (repo: string) => useQuery({ queryKey: ['stashes', repo], queryFn: () => api.stashes(repo), refetchInterval: 60_000 })
 export const useRemotes = (repo: string) => useQuery({ queryKey: ['remotes', repo], queryFn: () => api.remotes(repo) })
 export const useSubmodules = (repo: string) => useQuery({ queryKey: ['submodules', repo], queryFn: () => api.submodules(repo) })
 export const useFlow = (repo: string) => useQuery({ queryKey: ['flow', repo], queryFn: () => api.flowConfig(repo) })

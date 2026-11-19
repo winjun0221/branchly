@@ -250,6 +250,16 @@ function Workspace({ info }: { info: RepoInfo }) {
   }, [outside, qc, repo, status.data, branches.data])
 
   const refresh = useCallback(() => refreshRepo(repo), [refreshRepo, repo])
+
+  // 폴더 감시: 작업 폴더가 바뀌면 변경 사항만, .git 안이 바뀌면(커밋·브랜치·fetch 등) 전체 새로고침
+  useEffect(() => window.branchlyEvents.onRepoChanged((r, kind) => {
+    if (r !== repo) return
+    if (kind === 'git') refreshRepo(repo)
+    else {
+      void qc.invalidateQueries({ queryKey: ['status', repo] })
+      void qc.invalidateQueries({ queryKey: ['diff-working', repo] })
+    }
+  }), [repo, refreshRepo]) // eslint-disable-line react-hooks/exhaustive-deps
   const [side, setSide, resetSide] = usePaneSize('side', 230)
   const bodyRef = useRef<HTMLDivElement>(null)
 

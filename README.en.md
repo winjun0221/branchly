@@ -1,6 +1,6 @@
 # Branchly
 
-[한국어](README.md) · **English**
+[한국어](README.md) · **English** · [![CI](https://github.com/winjun0221/branchly/actions/workflows/ci.yml/badge.svg)](https://github.com/winjun0221/branchly/actions/workflows/ci.yml)
 
 **A Git client for Windows.** Create branches, merge, commit and push with clicks while looking at the commit graph.
 No commands to memorize, and merge conflicts can be resolved right on screen.
@@ -35,7 +35,7 @@ If Git is missing, Branchly tells you on first launch.
 - **History:** commit graph; search by message, author, file or code; compare two commits; file history; blame
 - **Branches:** create, switch, rename, delete, merge, rebase, interactive rebase, cherry-pick, revert, reset, tags
 - **Changes:** stage, unstage or discard whole files, hunks or single lines; add to .gitignore; stash
-- **Conflicts:** pick ours/theirs or edit, then continue, skip or abort
+- **Conflicts:** pick ours, theirs or both for each conflict block, then continue, skip or abort
 - **Remotes:** fetch, pull and push with options; manage remotes; open a pull request page on GitHub, GitLab or Bitbucket
 - **Also:** repositories in tabs, clone and init, Git Flow (feature/release/hotfix), submodules, Git LFS, SSH key generation, light/dark theme, open a terminal or Explorer in one click
 

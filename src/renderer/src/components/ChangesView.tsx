@@ -11,6 +11,7 @@ import { t, tx } from '../i18n'
 import { useUi, type MenuItem } from '../ui'
 import { lastLines, useWs } from '../ws'
 import DiffView from './DiffView'
+import ConflictView from './ConflictView'
 import { buildFileTree, FileRow, FolderRow, type FileTreeNode } from './FileList'
 import { clamp, Splitter, usePaneSize } from './Splitter'
 
@@ -272,6 +273,26 @@ export default function ChangesView() {
         const r = changesRef.current?.getBoundingClientRect()
         if (r) setLeft(clamp(x - r.left, 280, r.width - 320))
       }} />
+      {focus && isConflict ? (
+        <ConflictView
+          path={focus.path}
+          text={conflictText.data ? conflictText.data.text : undefined}
+          loading={conflictText.isPending}
+          error={conflictText.error}
+          onSave={async (text) => {
+            if (await ws.run(t('충돌 블록 고르기'), () => api.writeWorkingFile(ws.repo, focus.path, text))) await conflictText.refetch()
+          }}
+          onMarkResolved={() => void resolve(focus.path, 'mark')}
+          actions={(
+            <span className="conflict-actions">
+              <button className="btn small" onClick={() => void resolve(focus.path, 'ours')}>{t('파일 전체 내 쪽으로')}</button>
+              <button className="btn small" onClick={() => void resolve(focus.path, 'theirs')}>{t('파일 전체 상대 쪽으로')}</button>
+              <button className="btn small" onClick={() => a.openFile(focus.path)}><SquarePen />{t('편집기로')}</button>
+              <button className="btn small" onClick={() => void mergeTool(focus.path)}><Wrench />{t('병합 도구')}</button>
+            </span>
+          )}
+        />
+      ) : (
       <DiffView
         path={focus?.path ?? null}
         raw={isConflict ? undefined : diff.data}
@@ -290,6 +311,7 @@ export default function ChangesView() {
           </span>
         ) : undefined}
       />
+      )}
     </div>
   )
 }

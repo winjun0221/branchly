@@ -171,5 +171,21 @@
   "원격|section": "Remotes",
   "충돌|section": "Conflicts",
   "브랜치|section": "Branches",
-  "드래그해서 크기 조절 · 더블클릭하면 처음 크기": "Drag to resize · double-click to reset"
+  "드래그해서 크기 조절 · 더블클릭하면 처음 크기": "Drag to resize · double-click to reset",
+  "(비어 있음)": "(empty)",
+  "공통 조상": "Common ancestor",
+  "내 쪽 · {label}": "Ours · {label}",
+  "내 쪽": "Ours",
+  "둘 다 (내 쪽 먼저)": "Both (ours first)",
+  "둘 다 (상대 쪽 먼저)": "Both (theirs first)",
+  "상대 쪽 · {label}": "Theirs · {label}",
+  "상대 쪽": "Theirs",
+  "충돌 {n}": "Conflict {n}",
+  "충돌 {n}곳 남음": "{n} conflict(s) left",
+  "충돌 블록 고르기": "Resolve conflict block",
+  "충돌 표시 없음": "No conflict markers",
+  "파일 전체 내 쪽으로": "Whole file: ours",
+  "파일 전체 상대 쪽으로": "Whole file: theirs",
+  "파일에 충돌 표시가 더 없어요. 내용을 확인한 뒤 해결됨으로 표시하세요.": "No conflict markers left. Check the content, then mark it as resolved.",
+  "합치는 쪽": "incoming"
 }

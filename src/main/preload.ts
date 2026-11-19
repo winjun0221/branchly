@@ -12,3 +12,12 @@ async function call(channel: string, ...args: unknown[]): Promise<unknown> {
 const api = Object.fromEntries(API_METHODS.map((name) => [name, (...args: unknown[]) => call(name, ...args)])) as unknown as Api
 
 contextBridge.exposeInMainWorld('api', api)
+
+/** 메인이 알려 주는 저장소 변화(폴더 감시). 반환값을 부르면 그만 받는다 */
+contextBridge.exposeInMainWorld('branchlyEvents', {
+  onRepoChanged(cb: (repo: string, kind: 'work' | 'git') => void) {
+    const h = (_e: unknown, repo: string, kind: 'work' | 'git') => cb(repo, kind)
+    ipcRenderer.on('repo-changed', h)
+    return () => ipcRenderer.removeListener('repo-changed', h)
+  },
+})

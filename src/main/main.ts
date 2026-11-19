@@ -6,6 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import * as repo from './repo'
 import * as updater from './updater'
+import { watchRepo } from './watch'
 import { git } from './git'
 import {
   allowDir, allowRepo, checkBool, checkDir, checkFile, checkFiles, checkFolderName, checkInt, checkMessage, checkName,
@@ -68,6 +69,9 @@ function readRecent(): RepoInfo[] {
 async function open(dir: string): Promise<RepoInfo> {
   const info = await repo.resolveRepo(dir)
   allowRepo(info.path)
+  watchRepo(info.path, (r, kind) => {
+    if (win && !win.isDestroyed()) win.webContents.send('repo-changed', r, kind)
+  })
   writeJson('recent.json', [info, ...readRecent().filter((r) => path.resolve(r.path) !== info.path)].slice(0, 20))
   return info
 }
@@ -341,6 +345,7 @@ const handlers: Handlers = {
   diffRange: async (r, from, to) => repo.diffRange(checkRepo(r), checkRef(from), checkRef(to)),
   diffRangeFile: async (r, from, to, file, o) => repo.diffRangeFile(checkRepo(r), checkRef(from), checkRef(to), checkFile(file), diffOpts(o)),
   readWorkingFile: async (r, file) => repo.readWorkingFile(checkRepo(r), checkFile(file)),
+  writeWorkingFile: async (r, file, text) => repo.writeWorkingFile(checkRepo(r), checkFile(file), checkText(text, 20_000_000)),
   imagePreview: async (r, rev, file) => repo.imagePreview(checkRepo(r), checkOptionalRef(rev), checkFile(file)),
   blame: async (r, file, rev) => repo.blame(checkRepo(r), checkFile(file), checkOptionalRef(rev)),
   fileLog: async (r, file, limit) => repo.fileLog(checkRepo(r), checkFile(file), checkInt(limit, 1, 5000)),
