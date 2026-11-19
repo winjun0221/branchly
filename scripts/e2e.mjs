@@ -2,7 +2,7 @@
 // → 병합 충돌 해결 → 올리기 → 설정·파일 기록·blame·새 탭
 // 사용: npm run e2e  (스크린샷: E2E_OUT 폴더, 기본은 임시 폴더)
 import { _electron as electron } from 'playwright-core'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -261,6 +261,19 @@ try {
     .map((s) => [...document.querySelectorAll(s)].map((e) => e.textContent).join(' ')).join(' ').match(/[가-힣]+/g))
   check('no Korean left in English changes view', !changesLeft, changesLeft ? changesLeft.slice(0, 8).join(', ') : '')
   await shot(win, '13-changes-en.png')
+
+  // ── 한 번에 하나만: 켜진 상태에서 다른 폴더로 다시 실행하면 그 프로세스는 끝나고 기존 창에 새 탭 ──
+  const second = path.join(out, 'second-repo')
+  fs.mkdirSync(second, { recursive: true })
+  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: second })
+  const again = spawn(electronPath, ['.', second], { env: { ...process.env, BRANCHLY_USER_DATA: path.join(out, 'userdata'), GIT_CONFIG_GLOBAL: globalConfig }, stdio: 'ignore' })
+  const exited = await new Promise((r) => {
+    const timer = setTimeout(() => r(false), 15000)
+    again.on('exit', () => { clearTimeout(timer); r(true) })
+  })
+  if (!exited) again.kill()
+  check('second launch exits (single instance)', exited)
+  check('second launch opens a tab in the first window', await until(async () => (await win.locator('.tab', { hasText: 'second-repo' }).count()) === 1, 10000))
 } catch (e) {
   check('unexpected error', false, String(e?.message ?? e).split('\n').slice(0, 6).join(' | '))
   try {

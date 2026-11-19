@@ -89,6 +89,27 @@ function Shell() {
     setActive(r.path)
   }, [])
 
+  // 이미 켜진 상태에서 Branchly를 다시 실행하며 폴더를 넘기면(탐색기·명령줄) 여기서 새 탭으로 연다
+  useEffect(() => {
+    if (booting) return
+    const take = async () => {
+      for (const dir of await api.takePendingOpen().catch(() => [] as string[])) {
+        try {
+          openTab(await api.openRepo(dir))
+        } catch (e) {
+          ui.notify(errorText(e), 'error')
+        }
+      }
+    }
+    void take()
+    window.addEventListener('focus', take)
+    const timer = window.setInterval(take, 2000)
+    return () => {
+      window.removeEventListener('focus', take)
+      window.clearInterval(timer)
+    }
+  }, [booting, openTab, ui])
+
   const closeTab = useCallback((path: string) => {
     setTabs((t) => {
       const i = t.findIndex((x) => x.path === path)

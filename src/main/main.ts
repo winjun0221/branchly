@@ -27,6 +27,22 @@ if (process.env.BRANCHLY_USER_DATA) app.setPath('userData', process.env.BRANCHLY
 // 테마 강제 (화면 확인용): BRANCHLY_THEME=dark|light. 없으면 앱 설정 → Windows 설정
 const FORCED_THEME = process.env.BRANCHLY_THEME === 'dark' || process.env.BRANCHLY_THEME === 'light' ? process.env.BRANCHLY_THEME : null
 
+// 한 번에 하나만 켠다. 이미 켜져 있으면 그 창을 앞으로 가져오고(폴더를 넘겼으면 새 탭으로 열게 전달) 이 프로세스는 끝낸다.
+// 둘이 같이 켜져 있으면 업데이트 설치가 중간에 막히고(제어판 버전이 안 바뀐 적 있음) 설정 파일도 서로 덮어쓴다.
+// 잠금은 설정 폴더 기준이라 BRANCHLY_USER_DATA를 따로 주는 테스트는 따로 켜진다.
+const firstInstance = app.requestSingleInstanceLock()
+if (!firstInstance) app.quit()
+const pendingOpen: string[] = []
+app.on('second-instance', (_e, argv) => {
+  const dir = dirFromArgs(argv.slice(app.isPackaged ? 1 : 2))
+  if (dir) pendingOpen.push(dir)
+  if (win) {
+    if (win.isMinimized()) win.restore()
+    win.show()
+    win.focus()
+  }
+})
+
 // ───────── 최근 저장소 ─────────
 
 const dataFile = (name: string) => path.join(app.getPath('userData'), name)
@@ -59,7 +75,11 @@ async function open(dir: string): Promise<RepoInfo> {
 /** 실행할 때 넘긴 폴더 (branchly C:\work\repo), 테스트는 BRANCHLY_OPEN */
 function startupDir(): string | null {
   if (process.env.BRANCHLY_OPEN) return process.env.BRANCHLY_OPEN
-  const args = process.argv.slice(app.isPackaged ? 1 : 2)
+  return dirFromArgs(process.argv.slice(app.isPackaged ? 1 : 2))
+}
+
+/** 명령줄에서 폴더 하나 (옵션·'.'은 건너뜀) */
+function dirFromArgs(args: string[]): string | null {
   const dir = args.find((a) => !a.startsWith('-') && a !== '.' && fs.existsSync(a) && fs.statSync(a).isDirectory())
   return dir ? path.resolve(dir) : null
 }
@@ -277,6 +297,7 @@ const handlers: Handlers = {
     writeJson('recent.json', readRecent().filter((r) => r.path !== dir))
   },
   startupRepo: async () => startupDir(),
+  takePendingOpen: async () => pendingOpen.splice(0),
   pickFolder: async (title) => {
     const r = await dialog.showOpenDialog(win!, { title: checkText(title ?? t('폴더 고르기'), 200), properties: ['openDirectory', 'createDirectory'] })
     if (r.canceled || r.filePaths.length === 0) return null
@@ -582,6 +603,7 @@ async function checkGit() {
 }
 
 app.whenReady().then(() => {
+  if (!firstInstance) return
   const s = readSettings()
   setLang(resolveLang(s.language, app.getLocale()))
   applyTheme(s)

@@ -258,6 +258,8 @@ export interface Api {
   recentRepos(): Promise<RepoInfo[]>
   forgetRepo(path: string): Promise<void>
   startupRepo(): Promise<string | null>
+  /** 이미 켜진 상태에서 다시 실행하며 넘긴 폴더들 (가져가면 비워짐) */
+  takePendingOpen(): Promise<string[]>
   pickFolder(title: string): Promise<string | null>
   cloneRepo(url: string, parentDir: string, name: string, branch: string | null, recursive: boolean): Promise<RepoInfo>
   initRepo(dir: string): Promise<RepoInfo>
@@ -367,7 +369,7 @@ export interface Api {
 
 /** preload가 등록하는 메서드 이름 목록 (main의 handler와 같아야 함) */
 export const API_METHODS = [
-  'pickRepo', 'openRepo', 'recentRepos', 'forgetRepo', 'startupRepo', 'pickFolder', 'cloneRepo', 'initRepo',
+  'pickRepo', 'openRepo', 'recentRepos', 'forgetRepo', 'startupRepo', 'takePendingOpen', 'pickFolder', 'cloneRepo', 'initRepo',
   'status', 'log', 'branches', 'stashes', 'remotes', 'submodules', 'commitDetail', 'diffWorking', 'diffCommit',
   'diffRange', 'diffRangeFile', 'readWorkingFile', 'imagePreview', 'blame', 'fileLog', 'lastCommitMessage',
   'recentMessages', 'rebaseSteps',
