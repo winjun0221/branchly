@@ -1,0 +1,24 @@
+# push·풀 리퀘스트마다: 타입 검사 → 테스트(파서·번역·실제 git 저장소 작업) → 빌드
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    env:
+      # 테스트·빌드에는 Electron 실행 파일이 필요 없음 (설치 파일 빌드는 release.yml)
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

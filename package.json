@@ -16,7 +16,7 @@
     "e2e": "npm run build && node scripts/e2e.mjs",
     "icon": "electron scripts/make-icon.mjs",
     "pack": "npm run build && electron-builder --win --dir",
-    "dist": "npm run build && npm run notices && electron-builder --win",
+    "dist": "npm run build && npm run notices && electron-builder --win --publish never",
     "serve-updates": "node scripts/serve-updates.mjs",
     "notices": "node scripts/notices.mjs"
   },

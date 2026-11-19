@@ -1,0 +1,52 @@
+# 태그(v0.4.4 등)를 올리면: 테스트 → 설치 파일 빌드 → GitHub 릴리스(Latest)에 올림
+# Actions 화면에서 직접 실행(workflow_dispatch)하면 릴리스 없이 빌드 결과만 남긴다(시험용)
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Tag matches package.json version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          if [ "v$VER" != "$GITHUB_REF_NAME" ]; then echo "태그 $GITHUB_REF_NAME 와 package.json 버전 $VER 이 다릅니다"; exit 1; fi
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branchly-${{ github.ref_name }}
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+          if-no-files-found: error
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          FILES="release/latest.yml release/Branchly-Setup-$VER.exe release/Branchly-Setup-$VER.exe.blockmap release/Branchly-$VER-portable.exe"
+          # 지금 Latest 릴리스의 blockmap도 같이 올리면, 설치된 앱이 바뀐 부분만 받는다
+          PREV=$(gh release view --json tagName -q .tagName 2>/dev/null || true)
+          if [ -n "$PREV" ] && gh release download "$PREV" -p "Branchly-Setup-${PREV#v}.exe.blockmap" -D release 2>/dev/null; then
+            FILES="$FILES release/Branchly-Setup-${PREV#v}.exe.blockmap"
+          fi
+          gh release create "$GITHUB_REF_NAME" $FILES --title "Branchly $VER" --generate-notes --latest
